@@ -1,0 +1,268 @@
+#Creating Directory - all dynamic
+import os
+import pandas as pd
+from datetime import datetime
+import sys
+from tkinter import *
+from tkinter import Tk
+
+today_time_stamp = datetime.now()
+folder_day = today_time_stamp.strftime("%d"+'_'+"%b")
+folder_time = today_time_stamp.strftime("%H"+'_'+"%M")
+
+current_path = os.getcwd()
+current_path = 'C:\\Users\\ApoorvVerma\\Desktop\\automate\\Cluster'
+
+output_dir = current_path+'\\'+folder_day
+
+try:
+    os.mkdir(output_dir)
+    try:
+        output_sub_dir = output_dir+'\\'+folder_time
+        os.mkdir(output_sub_dir)
+#         try:
+#             upload_path = output_sub_dir+'\\'+'Upload'
+#             os.mkdir(upload_path)
+#         except:
+#             print('folder exists')              
+    except:
+        print('folder exists')
+        
+except:
+    try:
+        output_sub_dir = output_dir+'\\'+folder_time
+        os.mkdir(output_sub_dir)
+#         try:
+#             upload_path = output_sub_dir+'\\'+'Upload'
+#             os.mkdir(upload_path)
+#         except:
+#             print('folder exists')
+    except:
+        print('folder exists') 
+
+file_name = [i for i in os.listdir(current_path) if i.endswith('.xlsx')]
+
+file = pd.read_excel(current_path+'\\'+file_name[0])
+
+Column_names = file.columns
+
+# The use of the ttk module is optional, you can use regular tkinter widgets
+from tkinter import *
+from tkinter import ttk
+
+main = Tk()
+main.title("Multiple Choice Listbox")
+main.geometry("+50+150")
+frame = ttk.Frame(main, padding=(3, 3, 12, 12))
+frame.grid(column=0, row=0, sticky=(N, S, E, W))
+
+def listToString(s):  
+    
+    # initialize an empty string 
+    str1 = ""  
+    
+    # traverse in the string   
+    for ele in s:  
+        str1 += ele+" "   
+    
+    # return string   
+    return str1
+                
+# Driver code     
+s =  listToString(Column_names) 
+
+column_names_ = StringVar()
+
+column_names_.set(s)
+
+lstbox = Listbox(frame, listvariable = column_names_, selectmode=MULTIPLE, width=20, height=10)
+lstbox.grid(column=0, row=0, columnspan=2)
+new_columns = []
+def select():
+    reslist = list()
+    seleccion = lstbox.curselection()
+    for i in seleccion:
+        entrada = lstbox.get(i)
+        reslist.append(entrada)
+    for val in reslist:
+        new_columns.append(val)
+        print(val + " Selected")
+
+btn = ttk.Button(frame, text="Select", command=select)
+btn.grid(column=1, row=1)
+
+main.mainloop()
+
+new_df = file[new_columns]
+new_count = new_df.shape[1]
+
+def normalize(dataset):
+    data_norm = ((dataset-dataset.min())/(dataset.max()-dataset.min()))*20
+    return data_norm
+
+new_df = normalize(new_df)
+
+#Kmeans clustering
+
+from sklearn.cluster import KMeans
+from sklearn import metrics
+from scipy.spatial.distance import cdist
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pdb
+
+from sklearn.cluster import KMeans
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters = i, init = 'k-means++', random_state = 42)
+    kmeans.fit(new_df)
+    # inertia method returns wcss for that model
+    wcss.append(kmeans.inertia_)
+
+
+plt.figure(figsize=(10,5))
+sns.lineplot(range(1, 11), wcss,marker='o',color='red')
+plt.title('The Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+no_clust = 4 #default
+def printtext():
+    global no_clust
+    no_clust = int(e.get())
+    print(no_clust)   
+
+#from Tkinter import *
+root = Tk()
+
+root.title('# of Cluster')
+
+e = Entry(root)
+e.pack()
+e.focus_set()
+
+b = Button(root,text='Click',command=printtext)
+b.pack(side='bottom')
+root.mainloop()
+
+kmeans = KMeans(n_clusters = no_clust, init = 'k-means++', random_state = 42)
+y_kmeans = kmeans.fit_predict(new_df)
+
+# y_kmeans.tolist()
+Bins = pd.DataFrame({"Bucket":y_kmeans.tolist()})
+
+file['Bins'] = y_kmeans
+# pd.concat(file,Bins)
+# [file] = 
+
+file.to_excel(output_sub_dir+"\\"+"Cluster.xlsx", index = False)
+
+print("How many scatter plot you want to create ?")
+no_of_plots = 1 #default
+def printtext():
+    global no_of_plots
+    no_of_plots = int(e.get())
+    print(no_of_plots)   
+
+#from Tkinter import *
+root = Tk()
+
+root.title('# of Plots')
+
+e = Entry(root)
+e.pack()
+e.focus_set()
+
+b = Button(root,text='Click',command=printtext)
+b.pack(side='bottom')
+root.mainloop()
+
+Column_names = new_columns #file.columns
+color_list = ['Red','Blue','Green','Grey','Orange','Pink']
+
+# The use of the ttk module is optional, you can use regular tkinter widgets
+# from tkinter import *
+# from tkinter import ttk
+for i in range(0,no_of_plots ):
+    print("Select any two numeric columns to generate scatterplot")
+
+    main = Tk()
+    main.title("Multiple Choice Listbox")
+    main.geometry("+50+150")
+    frame = ttk.Frame(main, padding=(3, 3, 12, 12))
+    frame.grid(column=0, row=0, sticky=(N, S, E, W))
+
+    def listToString(s):  
+
+        # initialize an empty string 
+        str1 = ""  
+
+        # traverse in the string   
+        for ele in s:  
+            str1 += ele+" "   
+
+        # return string   
+        return str1
+
+    # Driver code     
+    s =  listToString(Column_names) 
+
+    column_names_ = StringVar()
+
+    column_names_.set(s)
+
+    lstbox = Listbox(frame, listvariable = column_names_, selectmode=MULTIPLE, width=20, height=10)
+    lstbox.grid(column=0, row=0, columnspan=2)
+    new_columns = []
+    def select():
+        reslist = list()
+        seleccion = lstbox.curselection()
+        for i in seleccion:
+            entrada = lstbox.get(i)
+            reslist.append(entrada)
+        for val in reslist:
+            new_columns.append(val)
+            print(val + " Selected")
+
+    btn = ttk.Button(frame, text="Select", command=select)
+    btn.grid(column=1, row=1)
+
+    main.mainloop()
+    
+    # Visualising the clusters
+
+    try :
+        if len(new_columns) <= 2:
+
+            plt.figure(figsize=(15,7))
+            for i in range(0, no_clust):
+
+                 sns.scatterplot(file[new_columns[0]][y_kmeans == i], file[new_columns[1]][y_kmeans == i], color = color_list[i], label = 'Cluster '+str(i),s=50)
+    #         sns.scatterplot(file['Sales'][y_kmeans == 1], file['Shipment'][y_kmeans == 1], color = 'blue', label = 'Cluster 2',s=50)
+    #         sns.scatterplot(file['Sales'][y_kmeans == 2], file['Shipment'][y_kmeans == 2], color = 'green', label = 'Cluster 3',s=50)
+    #         sns.scatterplot(file['Sales'][y_kmeans == 3], file['Shipment'][y_kmeans == 3], color = 'grey', label = 'Cluster 4',s=50)
+    #         sns.scatterplot(file['Sales'][y_kmeans == 4], file['Shipment'][y_kmeans == 4], color = 'orange', label = 'Cluster 5',s=50)
+            sns.scatterplot(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], color = 'red', 
+                                label = 'Centroids',s=300,marker=',')
+            plt.grid(False)
+            plt.title('Clusters Plot')
+            plt.xlabel(new_columns[0])
+            plt.ylabel(new_columns[1])
+            plt.legend()
+            plt.show()
+    except:
+        print("Please select only two numeric columns ")
+
+
+
+
+
+
+
+
+
+
+
+
